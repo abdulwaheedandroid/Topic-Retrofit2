@@ -1,12 +1,13 @@
 package com.abdul_waheed.retrofit;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
-import android.widget.ListAdapter;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -17,6 +18,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvResult;
+
+    private JsonPlaceHolderApi jsonPlaceHolderApi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,9 +33,51 @@ public class MainActivity extends AppCompatActivity {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        JsonPlaceHolderApi jsonPlaceHolderApi = retrofit.create(JsonPlaceHolderApi.class);
+        jsonPlaceHolderApi = retrofit.create(JsonPlaceHolderApi.class);
 
-        Call<List<Post>> call = jsonPlaceHolderApi.getPosts();
+       // getPosts();
+        getComments();
+    }
+
+    private void getComments() {
+        Call<List<Commets>> call = jsonPlaceHolderApi.getComments("posts/2/comments");
+        call.enqueue(new Callback<List<Commets>>() {
+            @Override
+            public void onResponse(Call<List<Commets>> call, Response<List<Commets>> response) {
+                if (!response.isSuccessful()){
+                    tvResult.setText("Code : " + response.code());
+                    return;
+                }
+
+                List<Commets> commetsList = response.body();
+                for (Commets commets : commetsList) {
+                    String content = "";
+                    content += "ID: " + commets.getId() + "\n";
+                    content += "User ID " + commets.getUserId()+ "\n" ;
+                    content += "Post ID " + commets.getPostId()+ "\n" ;
+                    content += "Title " + commets.getTitle()+ "\n" ;
+                    content += "Body " + commets.getText()+ "\n\n" ;
+
+                    tvResult.append(content);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Commets>> call, Throwable t) {
+                tvResult.setText(t.getMessage());
+            }
+        });
+    }
+
+    private void getPosts() {
+
+        Map<String, String> param = new HashMap<>();
+        param.put("userId", "1");
+        param.put("_sort", "id");
+        param.put("_order", "desc");
+
+        //Call<List<Post>> call = jsonPlaceHolderApi.getPosts(4, "id", "desc");
+        Call<List<Post>> call = jsonPlaceHolderApi.getPosts(param);
         call.enqueue(new Callback<List<Post>>() {
             @Override
             public void onResponse(Call<List<Post>> call, Response<List<Post>> response) {
